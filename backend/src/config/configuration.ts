@@ -6,10 +6,10 @@ export default () => ({
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     synchronize: process.env.NODE_ENV !== 'production',
   },
-  wompi: {
-    baseUrl: process.env.WOMPI_BASE_URL,
-    publicKey: process.env.WOMPI_PUBLIC_KEY,
-    privateKey: process.env.WOMPI_PRIVATE_KEY,
-    integrityKey: process.env.WOMPI_INTEGRITY_KEY,
+  paymentGateway: {
+    baseUrl: process.env.PAYMENT_GATEWAY_BASE_URL,
+    publicKey: process.env.PAYMENT_GATEWAY_PUBLIC_KEY,
+    privateKey: process.env.PAYMENT_GATEWAY_PRIVATE_KEY,
+    integrityKey: process.env.PAYMENT_GATEWAY_INTEGRITY_KEY,
   },
 });

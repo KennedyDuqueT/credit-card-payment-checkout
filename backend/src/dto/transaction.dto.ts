@@ -48,5 +48,5 @@ export class PaymentResponseDto {
   success: boolean;
   transactionNumber: string;
   message: string;
-  wompiTransactionId?: string;
+  paymentGatewayTransactionId?: string;
 }

@@ -4,12 +4,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
 import { Transaction, TransactionStatus } from '@/entities/transaction.entity';
-import { CreateTransactionDto, PaymentResponseDto } from '@/dto/transaction.dto';
+import {
+  CreateTransactionDto,
+  PaymentResponseDto,
+} from '@/dto/transaction.dto';
 import { ProductsService } from '@/modules/products/products.service';
+import {
+  PaymentGatewayConfig,
+  PaymentTokenResponse,
+  PaymentTransactionResponse,
+  PaymentData,
+} from '@/interfaces/payment-gateway.interface';
 
 @Injectable()
 export class PaymentsService {
-  private readonly wompiConfig;
+  private readonly paymentGatewayConfig: PaymentGatewayConfig;
 
   constructor(
     private configService: ConfigService,
@@ -17,14 +26,20 @@ export class PaymentsService {
     private transactionsRepository: Repository<Transaction>,
     private productsService: ProductsService,
   ) {
-    this.wompiConfig = this.configService.get('wompi');
+    this.paymentGatewayConfig = this.configService.get<PaymentGatewayConfig>(
+      'paymentGateway',
+    ) as PaymentGatewayConfig;
   }
 
-  async processPayment(createTransactionDto: CreateTransactionDto): Promise<PaymentResponseDto> {
+  async processPayment(
+    createTransactionDto: CreateTransactionDto,
+  ): Promise<PaymentResponseDto> {
     try {
       // 1. Verificar que el producto existe y tiene stock
-      const product = await this.productsService.findOne(createTransactionDto.productId);
-      
+      const product = await this.productsService.findOne(
+        createTransactionDto.productId,
+      );
+
       if (product.stock < 1) {
         throw new HttpException('Product out of stock', HttpStatus.BAD_REQUEST);
       }
@@ -40,22 +55,27 @@ export class PaymentsService {
         status: TransactionStatus.PENDING,
       });
 
-      const savedTransaction = await this.transactionsRepository.save(transaction);
+      const savedTransaction =
+        await this.transactionsRepository.save(transaction);
 
-      // 4. Llamar a Wompi API
-      const wompiResponse = await this.callWompiAPI(createTransactionDto, product.price);
+      // 4. Llamar a Payment Gateway API
+      const paymentResponse = await this.callPaymentGatewayAPI(
+        createTransactionDto,
+        product.price,
+      );
 
-      // 5. Actualizar transacción con respuesta de Wompi
-      savedTransaction.wompiTransactionId = wompiResponse.data.id;
-      savedTransaction.wompiResponse = JSON.stringify(wompiResponse.data);
+      // 5. Actualizar transacción con respuesta del Payment Gateway
+      savedTransaction.wompiTransactionId = paymentResponse.data.id;
+      savedTransaction.wompiResponse = JSON.stringify(paymentResponse.data);
 
-      if (wompiResponse.data.status === 'APPROVED') {
+      if (paymentResponse.data.status === 'APPROVED') {
         savedTransaction.status = TransactionStatus.APPROVED;
         // Actualizar stock del producto
         await this.productsService.updateStock(product.id, 1);
       } else {
         savedTransaction.status = TransactionStatus.DECLINED;
-        savedTransaction.errorMessage = wompiResponse.data.status_message || 'Payment declined';
+        savedTransaction.errorMessage =
+          paymentResponse.data.status_message || 'Payment declined';
       }
 
       await this.transactionsRepository.save(savedTransaction);
@@ -63,22 +83,29 @@ export class PaymentsService {
       return {
         success: savedTransaction.status === TransactionStatus.APPROVED,
         transactionNumber: savedTransaction.transactionNumber,
-        message: savedTransaction.status === TransactionStatus.APPROVED 
-          ? 'Payment successful' 
-          : savedTransaction.errorMessage || 'Payment failed',
-        wompiTransactionId: savedTransaction.wompiTransactionId,
+        message:
+          savedTransaction.status === TransactionStatus.APPROVED
+            ? 'Payment successful'
+            : savedTransaction.errorMessage || 'Payment failed',
+        paymentGatewayTransactionId: savedTransaction.wompiTransactionId,
       };
-
     } catch (error) {
-      throw new HttpException(
-        error.message || 'Payment processing failed',
-        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'Payment processing failed';
+      const errorStatus =
+        error instanceof HttpException
+          ? error.getStatus()
+          : HttpStatus.INTERNAL_SERVER_ERROR;
+
+      throw new HttpException(errorMessage, errorStatus);
     }
   }
 
-  private async callWompiAPI(transactionData: CreateTransactionDto, amount: number) {
-    const paymentData = {
+  private async callPaymentGatewayAPI(
+    transactionData: CreateTransactionDto,
+    amount: number,
+  ): Promise<PaymentTransactionResponse> {
+    const paymentData: PaymentData = {
       amount_in_cents: Math.round(amount * 100), // Convertir a centavos
       currency: 'COP',
       customer_email: transactionData.customerEmail,
@@ -91,21 +118,23 @@ export class PaymentsService {
       payment_source_id: 1,
     };
 
-    const response = await axios.post(
-      `${this.wompiConfig.baseUrl}/transactions`,
+    const response = await axios.post<PaymentTransactionResponse>(
+      `${this.paymentGatewayConfig.baseUrl}/transactions`,
       paymentData,
       {
         headers: {
-          'Authorization': `Bearer ${this.wompiConfig.privateKey}`,
+          Authorization: `Bearer ${this.paymentGatewayConfig.privateKey}`,
           'Content-Type': 'application/json',
         },
-      }
+      },
     );
 
-    return response;
+    return response.data;
   }
 
-  private async createPaymentToken(transactionData: CreateTransactionDto): Promise<string> {
+  private async createPaymentToken(
+    transactionData: CreateTransactionDto,
+  ): Promise<string> {
     const tokenData = {
       number: transactionData.cardNumber,
       cvc: transactionData.cardCvv,
@@ -114,15 +143,15 @@ export class PaymentsService {
       card_holder: transactionData.customerName,
     };
 
-    const response = await axios.post(
-      `${this.wompiConfig.baseUrl}/tokens/cards`,
+    const response = await axios.post<PaymentTokenResponse>(
+      `${this.paymentGatewayConfig.baseUrl}/tokens/cards`,
       tokenData,
       {
         headers: {
-          'Authorization': `Bearer ${this.wompiConfig.publicKey}`,
+          Authorization: `Bearer ${this.paymentGatewayConfig.publicKey}`,
           'Content-Type': 'application/json',
         },
-      }
+      },
     );
 
     return response.data.data.id;

@@ -1,18 +1,18 @@
-// Interfaces para Wompi API
-export interface WompiConfig {
+// Interfaces para Payment Gateway API
+export interface PaymentGatewayConfig {
   baseUrl: string;
   publicKey: string;
   privateKey: string;
   integrityKey: string;
 }
 
-export interface WompiTokenResponse {
+export interface PaymentTokenResponse {
   data: {
     id: string;
   };
 }
 
-export interface WompiTransactionResponse {
+export interface PaymentTransactionResponse {
   data: {
     id: string;
     status: string;
@@ -20,7 +20,7 @@ export interface WompiTransactionResponse {
   };
 }
 
-export interface WompiPaymentData {
+export interface PaymentData {
   amount_in_cents: number;
   currency: string;
   customer_email: string;
