@@ -52,7 +52,10 @@ async function bootstrap() {
       await productsService.create(productData);
       console.log(`✅ Created product: ${productData.name}`);
     } catch (error) {
-      console.log(`❌ Error creating product ${productData.name}:`, error.message);
+      console.log(
+        `❌ Error creating product ${productData.name}:`,
+        (error as Error).message,
+      );
     }
   }
 
@@ -60,4 +63,4 @@ async function bootstrap() {
   await app.close();
 }
 
-bootstrap();
+void bootstrap();
