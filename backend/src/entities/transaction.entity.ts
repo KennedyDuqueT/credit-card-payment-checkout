@@ -1,11 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Product } from './product.entity';
 
 export enum TransactionStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   DECLINED = 'DECLINED',
-  FAILED = 'FAILED'
+  FAILED = 'FAILED',
 }
 
 @Entity('transactions')

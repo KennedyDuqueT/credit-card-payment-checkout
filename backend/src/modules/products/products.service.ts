@@ -35,7 +35,10 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto): Promise<Product> {
+  async update(
+    id: number,
+    updateProductDto: UpdateProductDto,
+  ): Promise<Product> {
     const product = await this.findOne(id);
     Object.assign(product, updateProductDto);
     return this.productsRepository.save(product);
@@ -49,7 +52,7 @@ export class ProductsService {
 
   async updateStock(id: number, quantity: number): Promise<Product> {
     const product = await this.findOne(id);
-    
+
     if (product.stock < quantity) {
       throw new Error('Insufficient stock');
     }
