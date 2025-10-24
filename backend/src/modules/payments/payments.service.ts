@@ -65,8 +65,10 @@ export class PaymentsService {
       );
 
       // 5. Actualizar transacción con respuesta del Payment Gateway
-      savedTransaction.wompiTransactionId = paymentResponse.data.id;
-      savedTransaction.wompiResponse = JSON.stringify(paymentResponse.data);
+      savedTransaction.paymentGatewayTransactionId = paymentResponse.data.id;
+      savedTransaction.paymentGatewayResponse = JSON.stringify(
+        paymentResponse.data,
+      );
 
       if (paymentResponse.data.status === 'APPROVED') {
         savedTransaction.status = TransactionStatus.APPROVED;
@@ -87,7 +89,8 @@ export class PaymentsService {
           savedTransaction.status === TransactionStatus.APPROVED
             ? 'Payment successful'
             : savedTransaction.errorMessage || 'Payment failed',
-        paymentGatewayTransactionId: savedTransaction.wompiTransactionId,
+        paymentGatewayTransactionId:
+          savedTransaction.paymentGatewayTransactionId,
       };
     } catch (error) {
       const errorMessage =

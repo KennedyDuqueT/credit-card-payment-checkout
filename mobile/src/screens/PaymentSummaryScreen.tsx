@@ -8,8 +8,9 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useDispatch, useSelector } from 'react-redux';
@@ -28,6 +29,7 @@ const PaymentSummaryScreen: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { cart, loading } = useSelector((state: RootState) => state.app);
   const { paymentData } = route.params;
+  const insets = useSafeAreaInsets();
 
   const calculateTotal = () => {
     return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
@@ -67,8 +69,13 @@ const PaymentSummaryScreen: React.FC = () => {
       } else {
         Alert.alert('Error', result.message || 'El pago no pudo ser procesado');
       }
-    } catch {
-      Alert.alert('Error', 'Ocurrió un error al procesar el pago');
+    } catch (error) {
+      console.error('Payment error:', error);
+      Alert.alert(
+        'Error de Pago', 
+        'El pago no pudo ser procesado. Esto puede deberse a datos de prueba en el entorno sandbox. Por favor, intenta con datos diferentes o contacta al soporte.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -87,51 +94,54 @@ const PaymentSummaryScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Resumen de Pago</Text>
-        <Text style={styles.headerSubtitle}>
-          Revisa la información antes de confirmar
-        </Text>
-      </View>
+    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Resumen de Pago</Text>
+          <Text style={styles.headerSubtitle}>
+            Revisa la información antes de confirmar
+          </Text>
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Productos</Text>
-        <FlatList
-          data={cart}
-          renderItem={renderCartItem}
-          keyExtractor={(item) => item.product.id.toString()}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Productos</Text>
+          <FlatList
+            data={cart}
+            renderItem={renderCartItem}
+            keyExtractor={(item) => item.product.id.toString()}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}
+          />
+        </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Información de Pago</Text>
-        <View style={styles.paymentInfo}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Nombre:</Text>
-            <Text style={styles.infoValue}>{paymentData.customerName}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>{paymentData.customerEmail}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Tarjeta:</Text>
-            <Text style={styles.infoValue}>
-              **** **** **** {paymentData.cardNumber.slice(-4)}
-            </Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Expira:</Text>
-            <Text style={styles.infoValue}>
-              {paymentData.cardExpiryMonth}/{paymentData.cardExpiryYear}
-            </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Información de Pago</Text>
+          <View style={styles.paymentInfo}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Nombre:</Text>
+              <Text style={styles.infoValue}>{paymentData.customerName}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Email:</Text>
+              <Text style={styles.infoValue}>{paymentData.customerEmail}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Tarjeta:</Text>
+              <Text style={styles.infoValue}>
+                **** **** **** {paymentData.cardNumber.slice(-4)}
+              </Text>
+            </View>
+            <View style={[styles.infoRow, { paddingBottom: insets.bottom }]}>
+              <Text style={styles.infoLabel}>Expira:</Text>
+              <Text style={styles.infoValue}>
+                {paymentData.cardExpiryMonth}/{paymentData.cardExpiryYear}
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
         <View style={styles.totalContainer}>
           <Text style={styles.totalText}>Total: ${formatCurrency(calculateTotal())}</Text>
         </View>
@@ -147,17 +157,20 @@ const PaymentSummaryScreen: React.FC = () => {
           )}
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: UI_CONSTANTS.COLORS.BACKGROUND,
+    backgroundColor: UI_CONSTANTS.COLORS.CARD,
+  },
+  scrollContainer: {
+    padding: UI_CONSTANTS.SPACING.MD,
+    paddingBottom: UI_CONSTANTS.SPACING.XL * 2, // Extra space for footer
   },
   header: {
-    backgroundColor: UI_CONSTANTS.COLORS.CARD,
     padding: UI_CONSTANTS.SPACING.LG,
     borderBottomWidth: 1,
     borderBottomColor: UI_CONSTANTS.COLORS.BACKGROUND,
@@ -173,7 +186,7 @@ const styles = StyleSheet.create({
     color: UI_CONSTANTS.COLORS.TEXT_SECONDARY,
   },
   section: {
-    backgroundColor: UI_CONSTANTS.COLORS.CARD,
+
     margin: UI_CONSTANTS.SPACING.MD,
     padding: UI_CONSTANTS.SPACING.LG,
     borderRadius: UI_CONSTANTS.BORDER_RADIUS.MD,
@@ -241,10 +254,22 @@ const styles = StyleSheet.create({
     color: UI_CONSTANTS.COLORS.TEXT_SECONDARY,
   },
   footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     backgroundColor: UI_CONSTANTS.COLORS.CARD,
     padding: UI_CONSTANTS.SPACING.LG,
     borderTopWidth: 1,
-    borderTopColor: UI_CONSTANTS.COLORS.BACKGROUND,
+    borderTopColor: UI_CONSTANTS.COLORS.BORDER,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   totalContainer: {
     alignItems: 'center',
