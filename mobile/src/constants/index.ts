@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: __DEV__ ? 'http://192.168.1.7:3000' : 'https://your-production-api.com',
+  BASE_URL: __DEV__ ? 'http://192.168.1.7:3001' : 'https://your-production-api.com',
   ENDPOINTS: {
     PRODUCTS: '/products',
     PAYMENTS: '/payments',

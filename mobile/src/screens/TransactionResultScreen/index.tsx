@@ -2,57 +2,16 @@ import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '../store';
-import { clearCart } from '../store/appSlice';
-import { RootStackParamList } from '../types';
-import { UI_CONSTANTS } from '../constants';
-
-type TransactionResultScreenNavigationProp = StackNavigationProp<RootStackParamList, 'TransactionResult'>;
-type TransactionResultScreenRouteProp = RouteProp<RootStackParamList, 'TransactionResult'>;
+import { formatCurrency } from '../../utils/currency';
+import { useTransactionResultScreen } from './hooks';
+import { styles } from './styles';
 
 const TransactionResultScreen: React.FC = () => {
-  const navigation = useNavigation<TransactionResultScreenNavigationProp>();
-  const route = useRoute<TransactionResultScreenRouteProp>();
-  const dispatch = useDispatch<AppDispatch>();
-  const { transaction } = route.params;
-
-  const handleContinueShopping = () => {
-    dispatch(clearCart());
-    navigation.navigate('Home');
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return UI_CONSTANTS.COLORS.SUCCESS;
-      case 'DECLINED':
-      case 'FAILED':
-        return UI_CONSTANTS.COLORS.ERROR;
-      default:
-        return UI_CONSTANTS.COLORS.WARNING;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'APPROVED':
-        return 'Aprobado';
-      case 'DECLINED':
-        return 'Declinado';
-      case 'FAILED':
-        return 'Fallido';
-      default:
-        return 'Pendiente';
-    }
-  };
+  const { transaction, handleContinueShopping, getStatusColor, getStatusText } = useTransactionResultScreen();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -75,7 +34,7 @@ const TransactionResultScreen: React.FC = () => {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Monto:</Text>
-              <Text style={styles.detailValue}>${transaction.amount.toFixed(2)}</Text>
+              <Text style={styles.detailValue}>${formatCurrency(transaction.amount)}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Estado:</Text>
@@ -133,7 +92,7 @@ const TransactionResultScreen: React.FC = () => {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Precio:</Text>
-              <Text style={styles.detailValue}>${transaction.product.price}</Text>
+              <Text style={styles.detailValue}>${formatCurrency(transaction.product.price)}</Text>
             </View>
           </View>
         </View>
@@ -159,86 +118,5 @@ const TransactionResultScreen: React.FC = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: UI_CONSTANTS.COLORS.BACKGROUND,
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
-  header: {
-    backgroundColor: UI_CONSTANTS.COLORS.CARD,
-    padding: UI_CONSTANTS.SPACING.LG,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: UI_CONSTANTS.COLORS.BACKGROUND,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: UI_CONSTANTS.COLORS.TEXT,
-    marginBottom: UI_CONSTANTS.SPACING.MD,
-  },
-  statusBadge: {
-    paddingVertical: UI_CONSTANTS.SPACING.SM,
-    paddingHorizontal: UI_CONSTANTS.SPACING.LG,
-    borderRadius: UI_CONSTANTS.BORDER_RADIUS.SM,
-  },
-  statusText: {
-    color: UI_CONSTANTS.COLORS.CARD,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  section: {
-    backgroundColor: UI_CONSTANTS.COLORS.CARD,
-    margin: UI_CONSTANTS.SPACING.MD,
-    padding: UI_CONSTANTS.SPACING.LG,
-    borderRadius: UI_CONSTANTS.BORDER_RADIUS.MD,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: UI_CONSTANTS.COLORS.TEXT,
-    marginBottom: UI_CONSTANTS.SPACING.MD,
-  },
-  detailsContainer: {
-    backgroundColor: UI_CONSTANTS.COLORS.BACKGROUND,
-    padding: UI_CONSTANTS.SPACING.MD,
-    borderRadius: UI_CONSTANTS.BORDER_RADIUS.SM,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: UI_CONSTANTS.SPACING.SM,
-  },
-  detailLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: UI_CONSTANTS.COLORS.TEXT,
-  },
-  detailValue: {
-    fontSize: 16,
-    color: UI_CONSTANTS.COLORS.TEXT_SECONDARY,
-  },
-  footer: {
-    backgroundColor: UI_CONSTANTS.COLORS.CARD,
-    padding: UI_CONSTANTS.SPACING.LG,
-    borderTopWidth: 1,
-    borderTopColor: UI_CONSTANTS.COLORS.BACKGROUND,
-  },
-  continueButton: {
-    backgroundColor: UI_CONSTANTS.COLORS.PRIMARY,
-    paddingVertical: UI_CONSTANTS.SPACING.MD,
-    borderRadius: UI_CONSTANTS.BORDER_RADIUS.SM,
-    alignItems: 'center',
-  },
-  continueButtonText: {
-    color: UI_CONSTANTS.COLORS.CARD,
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-});
 
 export default TransactionResultScreen;
