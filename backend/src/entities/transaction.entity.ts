@@ -49,10 +49,10 @@ export class Transaction {
   cardCvv: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  wompiTransactionId: string;
+  paymentGatewayTransactionId: string;
 
   @Column({ type: 'text', nullable: true })
-  wompiResponse: string;
+  paymentGatewayResponse: string;
 
   @Column({ type: 'text', nullable: true })
   errorMessage: string;
